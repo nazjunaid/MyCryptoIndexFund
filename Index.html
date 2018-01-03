@@ -15,7 +15,23 @@
         gtag('js', new Date());
         gtag('config', 'UA-1326403-9');
     </script>
+    <style>
+        [v-cloak] > * { display:none }
+        [v-cloak]::before { content: "loading…" }
+         .loader {
+             border: 16px solid #f3f3f3; /* Light grey */
+             border-top: 16px solid #3498db; /* Blue */
+             border-radius: 50%;
+             width: 120px;
+             height: 120px;
+             animation: spin 2s linear infinite;
+         }
 
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
 <!-- As a link -->
@@ -30,7 +46,7 @@
         <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png">
     </a>
     
-    <div id="app" style="margin-top: 30px">
+    <div id="app" style="margin-top: 30px" v-cloak>
 
         <h1>Build your Crypto Index Fund</h1>
 
@@ -88,104 +104,113 @@
                 </div>
             </div>
         </div>
+    
+        <div v-if="loading" class="text-center" style="margin-bottom: 30px">
+            <div class="loader" style="margin-left: auto;margin-right: auto;"></div>
+            Loading data from coinmarketcap.com...<br/>
+            <a href="/">Reload page</a>
+        </div>
+        <div v-else>
+            <div class="clearfix" style="margin-bottom: 10px">
+                <div style="float: left; margin-top: 0.5rem">
+                    <div class="form-check">
+                        <label class="form-check-label">
+                            <input type="checkbox" value="true" v-model="selectedOnly" class="form-check-input" />
+                            Only show {{selectedCoins.length}} selected coins
+                        </label>
+                    </div>
+                </div>
+                <ul class="nav justify-content-end">
+                    <li class="nav-item">
+                        <a href="#" v-on:click.prevent="mode = 'default'" class="nav-link">Default</a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="#" v-on:click.prevent="mode = 'rebalancing'" class="nav-link">Rebalancing</a>
+                    </li>
+                </ul>
+            </div>
 
-        <div class="clearfix" style="margin-bottom: 10px">
-            <div style="float: left; margin-top: 0.5rem">
-                <div class="form-check">
-                    <label class="form-check-label">
-                        <input type="checkbox" value="true" v-model="selectedOnly" class="form-check-input"/>
-                        Only show {{selectedCoins.length}} selected coins
-                    </label>
+            <div class="alert alert-info" v-if="isRebalancing">
+                Current portfolio value: <span>{{currencySymbol}} {{totalPortfolioWorth}}</span>
+            </div>
+
+            <table class="table table-hover table-sm table-responsive-md">
+                <thead class="thead-dark">
+                    <tr>
+                        <th></th>
+                        <th>Name</th>
+                        <th>Ideal %</th>
+                        <th v-if="isRebalancing">Current %</th>
+                        <th v-if="!isRebalancing">
+                            Ideal
+                            <span v-if="!isBtc">$</span>
+                            <span v-if="isBtc">Ƀ</span>
+                        </th>
+                        <th>Ideal Qty</th>
+                        <th v-if="isRebalancing" style="max-width: 100px">Holding Qty</th>
+                        <th v-if="!isRebalancing" class="d-none d-sm-table-cell">Current price</th>
+                        <th v-if="!isRebalancing" class="d-none d-sm-table-cell">Market cap</th>
+                        <th v-if="isRebalancing" style="text-align: center">Buy</th>
+                        <th v-if="isRebalancing" style="text-align: center">Sell</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(coin, i) in coinsToShow" :key="coin.name">
+                        <td>
+                            <input type="checkbox" value="true" v-model="coin.isSelected" style="margin-top: 4px; width: 16px; height: 16px;" />
+                        </td>
+                        <td>{{coin.rank}}: {{coin.name}} <span class="small text-muted">({{coin.symbol}})</span></td>
+                        <td v-bind:title="coin.weight">{{numeral(coin.weight).format("0.000%")}}</td>
+                        <td v-if="isRebalancing" v-bind:title="coin.currentWeight">{{numeral(coin.currentWeight).format("0.000%")}}</td>
+
+                        <td v-if="!isRebalancing && !isBtc" v-bind:title="coin.weightMoney">{{numeral(coin.weightMoney).format("$0.00")}}</td>
+                        <td v-if="!isRebalancing && isBtc" v-bind:title="coin.weightMoney">{{numeral(coin.weightMoney).format("Ƀ0.00000000")}}</td>
+
+                        <td v-bind:title="coin.quantity">{{numeral(coin.quantity).format("0.0000")}}</td>
+                        <td v-if="isRebalancing" style="max-width: 100px">
+                            <input type="number" class="form-control form-control-sm" v-model.number="coin.holdingQuantity" />
+                        </td>
+                        <td v-if="!isRebalancing" class="d-none d-sm-table-cell">
+                            <div v-if="isBtc">
+                                <span v-bind:title="coin.priceBtc">Ƀ {{numeral(coin.priceBtc).format("0,0.00000000")}}</span>
+                                <small class="text-muted" v-bind:title="coin.price">(${{numeral(coin.price).format("0,0.00")}})</small>
+                            </div>
+                            <div v-if="!isBtc">
+                                <span v-bind:title="coin.price">$ {{numeral(coin.price).format("0,0.00")}}</span>
+                            </div>
+                        </td>
+
+                        <td v-if="!isRebalancing" class="d-none d-sm-table-cell">${{numeral(coin.marketCap).format("0,0")}}</td>
+                        <td v-if="isRebalancing" style="color: green; text-align: center">
+                            <div v-if="coin.buyQuantity > 0 && buyTotalPrices[i]">
+                                <span v-bind:title="coin.buyQuantity">{{numeral(coin.buyQuantity).format("0.0000")}}</span> <small class="text-muted">{{coin.symbol}}</small>
+                                <br />
+                                <small v-bind:title="buyTotalPrices[i]">
+                                    <span v-if="isBtc">Ƀ {{numeral(buyTotalPrices[i]).format("0.00000000")}}</span>
+                                    <span v-if="!isBtc">$ {{numeral(buyTotalPrices[i]).format("0,0.00")}}</span>
+                                </small>
+                            </div>
+                        </td>
+                        <td v-if="isRebalancing" style="color: red; text-align: center">
+                            <div v-if="coin.sellQuantity < 0 && sellTotalPrices[i]">
+                                <span v-bind:title="coin.sellQuantity">{{numeral(coin.sellQuantity).format("0.0000")}}</span> <small class="text-muted">{{coin.symbol}}</small>
+                                <br />
+                                <small v-bind:title="sellTotalPrices[i]">
+                                    <span v-if="isBtc">Ƀ {{numeral(sellTotalPrices[i]).format("0.00000000")}}</span>
+                                    <span v-if="!isBtc">$ {{numeral(sellTotalPrices[i]).format("0,0.00")}}</span>
+                                </small>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="clearfix" style="margin-bottom: 20px">
+                <div style="float: right;">
+                    Data source: <a href="http://www.coinmarketcap.com" rel="nofollow" target="_blank">coinmarketcap.com</a>
                 </div>
             </div>
-            <ul class="nav justify-content-end">
-                <li class="nav-item">
-                    <a href="#" v-on:click.prevent="mode = 'default'" class="nav-link">Default</a>
-                </li>
-                <li class="nav-item">
-                    <a href="#" v-on:click.prevent="mode = 'rebalancing'" class="nav-link">Rebalancing</a>
-                </li>
-            </ul>
         </div>
-        
-        <div class="alert alert-info"  v-if="isRebalancing">
-            Current portfolio value: <span>{{currencySymbol}} {{totalPortfolioWorth}}</span>
-        </div>
-
-        <table class="table table-hover table-sm table-responsive-md">
-            <thead class="thead-dark">
-            <tr>
-                <th></th>
-                <th>Name</th>
-                <th>Ideal %</th>
-                <th v-if="isRebalancing">Current %</th>
-                <th v-if="!isRebalancing">Ideal 
-                    <span v-if="!isBtc">$</span>
-                    <span v-if="isBtc">Ƀ</span>
-                </th>
-                <th>Ideal Qty</th>
-                <th v-if="isRebalancing" style="max-width: 100px">Holding Qty</th>
-                <th v-if="!isRebalancing" class="d-none d-sm-table-cell">Current price</th>
-                <th v-if="!isRebalancing" class="d-none d-sm-table-cell">Market cap</th>
-                <th v-if="isRebalancing" style="text-align: center">Buy</th>
-                <th v-if="isRebalancing" style="text-align: center">Sell</th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr v-for="(coin, i) in coinsToShow" :key="coin.name">
-                <td>
-                    <input type="checkbox" value="true" v-model="coin.isSelected" style="margin-top: 4px; width: 16px; height: 16px;" />
-                </td>
-                <td>{{coin.rank}}: {{coin.name}} <span class="small text-muted">({{coin.symbol}})</span></td>
-                <td v-bind:title="coin.weight">{{numeral(coin.weight).format("0.000%")}}</td>
-                <td v-if="isRebalancing" v-bind:title="coin.currentWeight">{{numeral(coin.currentWeight).format("0.000%")}}</td>
-
-                <td v-if="!isRebalancing && !isBtc" v-bind:title="coin.weightMoney">{{numeral(coin.weightMoney).format("$0.00")}}</td>
-                <td v-if="!isRebalancing && isBtc" v-bind:title="coin.weightMoney">{{numeral(coin.weightMoney).format("Ƀ0.00000000")}}</td>
-
-                <td v-bind:title="coin.quantity">{{numeral(coin.quantity).format("0.0000")}}</td>
-                <td v-if="isRebalancing" style="max-width: 100px">
-                    <input type="number" class="form-control form-control-sm" v-model.number="coin.holdingQuantity" />
-                </td>
-                <td v-if="!isRebalancing" class="d-none d-sm-table-cell">
-                    <div v-if="isBtc">
-                        <span v-bind:title="coin.priceBtc">Ƀ {{numeral(coin.priceBtc).format("0,0.00000000")}}</span>
-                        <small class="text-muted" v-bind:title="coin.price">(${{numeral(coin.price).format("0,0.00")}})</small>
-                    </div>
-                    <div v-if="!isBtc">
-                        <span v-bind:title="coin.price">$ {{numeral(coin.price).format("0,0.00")}}</span>
-                    </div>
-                </td>
-
-                <td v-if="!isRebalancing" class="d-none d-sm-table-cell">${{numeral(coin.marketCap).format("0,0")}}</td>
-                <td v-if="isRebalancing" style="color: green; text-align: center">
-                    <div v-if="coin.buyQuantity > 0 && buyTotalPrices[i]">
-                        <span v-bind:title="coin.buyQuantity">{{numeral(coin.buyQuantity).format("0.0000")}}</span> <small class="text-muted">{{coin.symbol}}</small>
-                        <br />
-                        <small v-bind:title="buyTotalPrices[i]">
-                            <span v-if="isBtc">Ƀ {{numeral(buyTotalPrices[i]).format("0.00000000")}}</span>
-                            <span v-if="!isBtc">$ {{numeral(buyTotalPrices[i]).format("0,0.00")}}</span>
-                        </small>
-                    </div>
-                </td>
-                <td v-if="isRebalancing" style="color: red; text-align: center">
-                    <div v-if="coin.sellQuantity < 0 && sellTotalPrices[i]">
-                        <span v-bind:title="coin.sellQuantity">{{numeral(coin.sellQuantity).format("0.0000")}}</span> <small class="text-muted">{{coin.symbol}}</small>
-                        <br />
-                        <small v-bind:title="sellTotalPrices[i]">
-                            <span v-if="isBtc">Ƀ {{numeral(sellTotalPrices[i]).format("0.00000000")}}</span>
-                            <span v-if="!isBtc">$ {{numeral(sellTotalPrices[i]).format("0,0.00")}}</span>
-                        </small>
-                    </div>
-                </td>
-            </tr>
-            </tbody>
-        </table>
-        <div class="clearfix" style="margin-bottom: 20px">
-            <div style="float: right;">
-                Data source: <a href="http://www.coinmarketcap.com" rel="nofollow" target="_blank">coinmarketcap.com</a>
-            </div>
-        </div>
+    
         <div class="text-center" style="margin-bottom: 20px">
             <div><strong>Donations</strong>
             </div>

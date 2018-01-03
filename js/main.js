@@ -81,7 +81,8 @@
             numeral: numeral,
             importMode: "Import",
             importDataText: "",
-            exportDataText: ""
+            exportDataText: "",
+            loading: true
         },
         methods: {
             saveChanges: function(event) {
@@ -222,8 +223,7 @@
         },
         created: function() {
             $.get({
-                url: "https://api.coinmarketcap.com/v1/ticker/?limit=100",
-                cache: false
+                url: "https://api.coinmarketcap.com/v1/ticker/?limit=100"
             }).then(function (response) {
 
                 var selectedCoins = db.selectedCoins == null ? [] : db.selectedCoins;
@@ -267,6 +267,7 @@
                     return newCoin;
                 });
 
+                vm.loading = false;
                 vm.coins = coins;
             }).fail(function() {
                 alert("Error getting data from coinmarketcap.com");
