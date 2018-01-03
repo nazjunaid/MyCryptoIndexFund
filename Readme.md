@@ -19,7 +19,7 @@ NOTE: I'm not a financial adviser and these ideas do not represent and financial
 
 You can use this tool directly on [MyCryptoIndexFund.com](https://www.mycryptoindexfund.com/) or download the open source code from Github and run this locally.
 
-SImply enter in how much to invest and select the coins your interested in and the tool essentially calculates the ideal weight per coin and for convenience tells you how much quantity of that coins that equates to a long with a few other details.
+Simply enter in how much to invest, select the coins your interested in and the tool will calculate the ideal weight per coin and for tell you how much (quantity) of that coin you should own.
 
 Periodically (week/monthly) you'll want to re-balance your portfolio. Once you enter in your current quantity holdings the re-balancing feature will tell you how much you need to buy/sell to get your holdings back to the correct weightings.
 
