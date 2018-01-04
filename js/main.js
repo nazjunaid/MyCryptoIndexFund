@@ -25,12 +25,6 @@
         set investmentType(value) {
             localStorage.setItem("investmentType", value);
         },
-        get selectedOnly() {
-            return localStorage.getItem("selectedOnly") == null || localStorage.getItem("selectedOnly") === "true";
-        },
-        set selectedOnly(value) {
-            localStorage.setItem("selectedOnly", value);
-        },
         get selectedCoins() {
             return localStorage.getItem("selectedCoins") == null ? null : JSON.parse(localStorage.getItem("selectedCoins"));
         },
@@ -76,7 +70,6 @@
             maxPercentage: db.maxPercentage,
             investmentAmount: db.investmentAmount,
             investmentType: db.investmentType,
-            selectedOnly: db.selectedOnly,
             coins: [],
             numeral: numeral,
             importMode: "Import",
@@ -104,7 +97,6 @@
                 db.maxPercentage = this.maxPercentage;
                 db.investmentAmount = this.investmentAmount;
                 db.investmentType = this.investmentType;
-                db.selectedOnly = this.selectedOnly;
                 db.selectedCoins = selectedCoins;
             },
             reset: function() {
@@ -167,8 +159,10 @@
 
                     selectedCoin.weight = Math.min(maxPercentageFraction, percentageRemaining * selectedCoin.marketCap / totalCapRemaining);
                     selectedCoin.weightMoney = selectedCoin.weight * this.investmentAmount;
-                    selectedCoin.quantity = selectedCoin.weightMoney / (this.isBtc ? selectedCoin.priceBtc : selectedCoin.price);
-                    selectedCoin.currentWeight = (selectedCoin.holdingQuantity * (this.isBtc ? selectedCoin.priceBtc : selectedCoin.price)) / this.investmentAmount;
+                    var priceToUse = this.isBtc ? selectedCoin.priceBtc : selectedCoin.price;
+
+                    selectedCoin.quantity = selectedCoin.weightMoney / priceToUse;
+                    selectedCoin.currentWeight = (selectedCoin.holdingQuantity * priceToUse) / this.investmentAmount;
 
                     var quantityDifference = selectedCoin.quantity - selectedCoin.holdingQuantity;
 
@@ -187,7 +181,7 @@
                 return selectedCoins;
             },
             coinsToShow: function() {
-                if (this.selectedOnly) {
+                if (this.isRebalancing) {
                     return this.selectedCoins;
                 } else {
                     return this.coins;
