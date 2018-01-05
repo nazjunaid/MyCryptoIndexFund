@@ -1,0 +1,34 @@
+{
+  "name": "mycryptoindexfund.com",
+  "version": "1.0.0",
+  "description": "Index funds allow you to track a performance of a market rather than holding individual assets e.g S&P500, FTSE100 etc. these tend to consistently [outperform managed funds](http://fortune.com/2017/04/13/stock-indexes-beat-mutual-funds/).",
+  "main": "webpack.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "babel": "babel --presets es2015 src/js/app.js -o dist/app.bundle.js",
+    "build": "webpack",
+    "watch": "webpack --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nazjunaid/MyCryptoIndexFund.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nazjunaid/MyCryptoIndexFund/issues"
+  },
+  "homepage": "https://github.com/nazjunaid/MyCryptoIndexFund#readme",
+  "devDependencies": {
+    "babel-core": "^6.26.0",
+    "babel-loader": "^8.0.0-beta.0",
+    "clean-webpack-plugin": "^0.1.17",
+    "uglifyjs-webpack-plugin": "^1.1.6",
+    "webpack": "^3.10.0"
+  },
+  "dependencies": {
+    "@babel/core": "^7.0.0-beta.36",
+    "@babel/preset-env": "^7.0.0-beta.36"
+  }
+}
