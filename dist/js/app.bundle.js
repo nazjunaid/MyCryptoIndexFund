@@ -96,96 +96,6 @@ var vm = new _Vue.default({
     exportDataText: "",
     showAll: false
   },
-  methods: {
-    saveChanges: function saveChanges() {
-      var selectedCoins = [];
-
-      for (var i = 0; i < this.selectedCoins.length; i++) {
-        var coin = this.selectedCoins[i];
-
-        if (coin.isSelected) {
-          selectedCoins.push({
-            symbol: coin.symbol,
-            holdingQuantity: coin.holdingQuantity
-          });
-        }
-      }
-
-      _db.default.mode = this.mode;
-      _db.default.maxPercentage = this.maxPercentage;
-      _db.default.investmentAmount = this.investmentAmount;
-      _db.default.investmentType = this.investmentType;
-      _db.default.selectedCoins = selectedCoins;
-    },
-    reset: function reset() {
-      localStorage.clear();
-      window.location.reload();
-    },
-    launchImporter: function launchImporter() {
-      (0, _jquery.default)("#dataImporter").modal();
-      this.exportDataText = JSON.stringify(JSON.stringify(localStorage));
-    },
-    importData: function importData() {
-      try {
-        var data = JSON.parse(JSON.parse(this.importDataText));
-        localStorage.clear();
-        Object.keys(data).forEach(function (k) {
-          localStorage.setItem(k, data[k]);
-        });
-        window.location.reload();
-      } catch (e) {
-        alert("Import failed, please make sure you copy/pasted the full text");
-        throw e;
-      }
-    },
-    processCoinMaketCapData: function processCoinMaketCapData(response) {
-      var selectedCoins = _db.default.selectedCoins == null ? [] : _db.default.selectedCoins;
-
-      if (!selectedCoins.length) {
-        for (var i = 0; i < response.length; i++) {
-          for (var j = 0; j < scamCoins.length; j++) {
-            var isScam = scamCoins[j] === response[i].symbol;
-
-            if (!isScam) {
-              selectedCoins.push({
-                symbol: response[i].symbol
-              });
-            }
-          }
-
-          if (selectedCoins.length >= 20) {
-            break;
-          }
-        }
-      }
-
-      var coins = response.map(function (coin) {
-        var match = null;
-
-        for (var k = 0; k < selectedCoins.length; k++) {
-          if (selectedCoins[k].symbol === coin.symbol) {
-            match = selectedCoins[k];
-          }
-        }
-
-        var isSelected = match != null;
-        var holdingQuantity = match == null || !match.holdingQuantity ? 0 : match.holdingQuantity;
-        var newCoin = new _Coin.default({
-          name: coin.name,
-          symbol: coin.symbol,
-          rank: coin.rank,
-          price: parseFloat(coin.price_usd),
-          priceBtc: parseFloat(coin.price_btc),
-          marketCap: parseFloat(coin.market_cap_usd),
-          isSelected: isSelected,
-          holdingQuantity: holdingQuantity
-        });
-        return newCoin;
-      });
-      this.loading = false;
-      this.coins = coins;
-    }
-  },
   computed: {
     isRebalancing: function isRebalancing() {
       return this.mode === "rebalancing";
@@ -195,6 +105,9 @@ var vm = new _Vue.default({
     },
     currencySymbol: function currencySymbol() {
       return this.isBtc ? "Ƀ" : "$";
+    },
+    currencyFormat: function currencyFormat() {
+      return this.isBtc ? "0,0.00000000" : "0,0.00";
     },
     selectedCoins: function selectedCoins() {
       var totalCap = 0;
@@ -270,6 +183,103 @@ var vm = new _Vue.default({
       });
     }
   },
+  methods: {
+    saveChanges: function saveChanges() {
+      var selectedCoins = [];
+
+      for (var i = 0; i < this.selectedCoins.length; i++) {
+        var coin = this.selectedCoins[i];
+
+        if (coin.isSelected) {
+          selectedCoins.push({
+            symbol: coin.symbol,
+            holdingQuantity: coin.holdingQuantity
+          });
+        }
+      }
+
+      _db.default.mode = this.mode;
+      _db.default.maxPercentage = this.maxPercentage;
+      _db.default.investmentAmount = this.investmentAmount;
+      _db.default.investmentType = this.investmentType;
+      _db.default.selectedCoins = selectedCoins;
+    },
+    reset: function reset() {
+      localStorage.clear();
+      window.location.reload();
+    },
+    launchImporter: function launchImporter() {
+      (0, _jquery.default)("#dataImporter").modal();
+      console.log(localStorage);
+      this.exportDataText = JSON.stringify(JSON.stringify(localStorage, function (key, value) {
+        if (key === _db.default.keys.coinMaketCapCache) {
+          return undefined;
+        }
+
+        return value;
+      }));
+    },
+    importData: function importData() {
+      try {
+        var data = JSON.parse(JSON.parse(this.importDataText));
+        localStorage.clear();
+        Object.keys(data).forEach(function (k) {
+          localStorage.setItem(k, data[k]);
+        });
+        window.location.reload();
+      } catch (e) {
+        alert("Import failed, please make sure you copy/pasted the full text");
+        throw e;
+      }
+    },
+    processCoinMaketCapData: function processCoinMaketCapData(response) {
+      var selectedCoins = _db.default.selectedCoins == null ? [] : _db.default.selectedCoins;
+
+      if (!selectedCoins.length) {
+        for (var i = 0; i < response.length; i++) {
+          for (var j = 0; j < scamCoins.length; j++) {
+            var isScam = scamCoins[j] === response[i].symbol;
+
+            if (!isScam) {
+              selectedCoins.push({
+                symbol: response[i].symbol
+              });
+            }
+          }
+
+          if (selectedCoins.length >= 20) {
+            break;
+          }
+        }
+      }
+
+      var coins = response.map(function (coin) {
+        var match = null;
+
+        for (var k = 0; k < selectedCoins.length; k++) {
+          if (selectedCoins[k].symbol === coin.symbol) {
+            match = selectedCoins[k];
+          }
+        }
+
+        var isSelected = match != null;
+        var holdingQuantity = match == null || !match.holdingQuantity ? 0 : match.holdingQuantity;
+        var newCoin = new _Coin.default({
+          name: coin.name,
+          symbol: coin.symbol,
+          rank: coin.rank,
+          price: parseFloat(coin.price_usd),
+          priceBtc: parseFloat(coin.price_btc),
+          marketCap: parseFloat(coin.market_cap_usd),
+          isSelected: isSelected,
+          holdingQuantity: holdingQuantity
+        });
+        return newCoin;
+      });
+      this.loading = false;
+      this.coins = coins;
+    }
+  },
   created: function created() {
     var $vm = this;
 
@@ -317,52 +327,61 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.default = void 0;
 var db = {
+  keys: {
+    mode: "mode",
+    maxPercentage: "maxPercentage",
+    investmentAmount: "investmentAmount",
+    investmentType: "investmentType",
+    selectedCoins: "selectedCoins",
+    coinMaketCapCache: "coinMaketCapCache"
+  },
+
   get mode() {
-    return localStorage.getItem("mode") == null ? "default" : localStorage.getItem("mode");
+    return localStorage.getItem(this.keys.mode) == null ? "default" : localStorage.getItem(this.keys.mode);
   },
 
   set mode(value) {
-    localStorage.setItem("mode", value);
+    localStorage.setItem(this.keys.mode, value);
   },
 
   get maxPercentage() {
-    return localStorage.getItem("maxPercentage") == null ? 10 : localStorage.getItem("maxPercentage");
+    return localStorage.getItem(this.keys.maxPercentage) == null ? 10 : localStorage.getItem(this.keys.maxPercentage);
   },
 
   set maxPercentage(value) {
-    localStorage.setItem("maxPercentage", value);
+    localStorage.setItem(this.keys.maxPercentage, value);
   },
 
   get investmentAmount() {
-    return parseFloat(localStorage.getItem("investmentAmount") == null ? 1500 : localStorage.getItem("investmentAmount"));
+    return parseFloat(localStorage.getItem(this.keys.investmentAmount) == null ? 1500 : localStorage.getItem(this.keys.investmentAmount));
   },
 
   set investmentAmount(value) {
-    localStorage.setItem("investmentAmount", value);
+    localStorage.setItem(this.keys.investmentAmount, value);
   },
 
   get investmentType() {
-    return localStorage.getItem("investmentType") == null ? "USD" : localStorage.getItem("investmentType");
+    return localStorage.getItem(this.keys.investmentType) == null ? "USD" : localStorage.getItem(this.keys.investmentType);
   },
 
   set investmentType(value) {
-    localStorage.setItem("investmentType", value);
+    localStorage.setItem(this.keys.investmentType, value);
   },
 
   get selectedCoins() {
-    return localStorage.getItem("selectedCoins") == null ? null : JSON.parse(localStorage.getItem("selectedCoins"));
+    return localStorage.getItem(this.keys.selectedCoins) == null ? null : JSON.parse(localStorage.getItem(this.keys.selectedCoins));
   },
 
   set selectedCoins(value) {
-    localStorage.setItem("selectedCoins", JSON.stringify(value));
+    localStorage.setItem(this.keys.selectedCoins, JSON.stringify(value));
   },
 
   get coinMaketCapCache() {
-    return localStorage.getItem("coinMaketCapCache") == null ? null : JSON.parse(localStorage.getItem("selectedCoins"));
+    return localStorage.getItem(this.keys.coinMaketCapCache) == null ? null : JSON.parse(localStorage.getItem(this.keys.coinMaketCapCache));
   },
 
   set coinMaketCapCache(value) {
-    localStorage.setItem("coinMaketCapCache", JSON.stringify(value));
+    localStorage.setItem(this.keys.coinMaketCapCache, JSON.stringify(value));
   }
 
 };

@@ -144,7 +144,7 @@
                 </div>
 
                 <div class="alert alert-info" v-if="isRebalancing">
-                    Current portfolio value: <span>{{currencySymbol}} {{numeral(totalPortfolioWorth).format("0,0.00")}}</span>
+                    Current portfolio value: <span>{{currencySymbol}} {{numeral(totalPortfolioWorth).format(currencyFormat)}}</span>
                 </div>
 
                 <div class="alert alert-info" v-else>
@@ -192,7 +192,7 @@
                                 </td>
                                 <td v-if="!isRebalancing" class="d-none d-sm-table-cell">
                                     <div v-if="isBtc">
-                                        <span v-bind:title="coin.priceBtc">Ƀ {{numeral(coin.priceBtc).format("0,0.00000000")}}</span>
+                                        <span v-bind:title="coin.priceBtc">Ƀ {{numeral(coin.priceBtc).format(currencyFormat)}}</span>
                                         <small class="text-muted" v-bind:title="coin.price">(${{numeral(coin.price).format("0,0.00")}})</small>
                                     </div>
                                     <div v-if="!isBtc">
@@ -206,8 +206,7 @@
                                         <span v-bind:title="coin.buyQuantity">{{numeral(coin.buyQuantity).format("0.0000")}}</span> <small class="text-muted">{{coin.symbol}}</small>
                                         <br />
                                         <small v-bind:title="buyTotalPrices[i]">
-                                            <span v-if="isBtc">Ƀ {{numeral(buyTotalPrices[i]).format("0.00000000")}}</span>
-                                            <span v-if="!isBtc">$ {{numeral(buyTotalPrices[i]).format("0,0.00")}}</span>
+                                            {{currencySymbol}} {{numeral(buyTotalPrices[i]).format(currencyFormat)}}
                                         </small>
                                     </div>
                                 </td>
@@ -216,20 +215,19 @@
                                         <span v-bind:title="coin.sellQuantity">{{numeral(coin.sellQuantity).format("0.0000")}}</span> <small class="text-muted">{{coin.symbol}}</small>
                                         <br />
                                         <small v-bind:title="sellTotalPrices[i]">
-                                            <span v-if="isBtc">Ƀ {{numeral(sellTotalPrices[i]).format("0.00000000")}}</span>
-                                            <span v-if="!isBtc">$ {{numeral(sellTotalPrices[i]).format("0,0.00")}}</span>
+                                            {{currencySymbol}} {{numeral(sellTotalPrices[i]).format(currencyFormat)}}
                                         </small>
                                     </div>
                                 </td>
                             </tr>
-                            <tr>
-                                <td colspan="8" class="text-center">
-                                    <a href="#" v-if="!showAll" v-on:click.prevent="showAll = true">Show all</a>
-                                    <a href="#" v-if="showAll" v-on:click.prevent="showAll = false">Only show selected</a>
-                                </td>
-                            </tr>
                         </tbody>
                     </table>
+                    <div>
+                        <div colspan="8" class="text-center">
+                            <a href="#" v-if="!showAll" v-on:click.prevent="showAll = true">Show all</a>
+                            <a href="#" v-if="showAll" v-on:click.prevent="showAll = false">Only show selected</a>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="clearfix" style="margin-bottom: 20px">
